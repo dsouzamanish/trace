@@ -1,4 +1,8 @@
 node_modules
+dist
+build
+
+# Environment files
 .env
 .env.local
 .env.development.local
@@ -7,5 +11,42 @@ node_modules
 .env.development
 .env.test
 .env.production
+secrets.md
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Cursor
 .cursorrules
 .cursorignore
+
+# PM2
+.pm2
+
+backend/node_modules
+backend/dist
+backend/build
+backend/logs
+backend/npm-debug.log*
+backend/secrets.md
+backend/.pm2
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+backend/.env.development
+backend/.env.test
+
+frontend/node_modules
+frontend/dist
+frontend/build
+frontend/logs
+frontend/npm-debug.log*
+frontend/secrets.md
+frontend/.pm2
+frontend/.env
+frontend/.env.local
+

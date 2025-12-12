@@ -52,6 +52,47 @@ Fields: report\_type, target\_member (reference), report\_period, summary, actio
 
 OAuth-based login via Slack or Google. System maps email/slack\_id to Team Member entry. Access levels: Individual (own data), Manager (team data), Admin (all).
 
+**7.1.1 Auto-Registration via Google OAuth**
+
+When a user logs in via Google OAuth for the first time:
+1. System checks if a Team Member entry exists with the user's email
+2. If not found, automatically creates a new Team Member entry with:
+   - `first_name`: From Google profile
+   - `last_name`: From Google profile
+   - `email`: From Google account (unique identifier)
+   - `profile_pic_url`: Google profile picture URL (stored as text field for external URLs)
+   - `designation`: "Other" (default, user can update later)
+   - `is_manager`: false (default, admin can promote)
+   - `status`: "Active"
+3. User is then issued a JWT token for subsequent API requests
+4. On subsequent logins, existing Team Member entry is retrieved and used
+
+**Flow Diagram:**
+```
+Google OAuth Login
+       ↓
+  validateGoogleUser()
+       ↓
+  findByEmail(email)
+       ↓
+┌─────────────────┐
+│  User exists?   │
+└─────────────────┘
+    │         │
+   YES       NO
+    │         │
+    ↓         ↓
+ Return    Create new
+ existing  team member
+ user      in Contentstack
+    │         │
+    └────┬────┘
+         ↓
+  Generate JWT Token
+         ↓
+  Return AuthResponse
+```
+
 **7.2 Slack Integration**
 
 Slash command `/blocker` opens a modal. Submissions create Blocker entries in Contentstack via Launch webhook.
@@ -202,6 +243,7 @@ You’ll use Slack + Contentstack Automations + Webhook integration to automatic
     { "display_name": "Email", "uid": "email", "data_type": "text", "mandatory": true, "unique": true },
     { "display_name": "Slack ID", "uid": "slack_id", "data_type": "text" },
     { "display_name": "Profile Picture", "uid": "profile_pic", "data_type": "file", "field_metadata": { "extensions": ["jpg", "png", "jpeg"] } },
+    { "display_name": "Profile Picture URL", "uid": "profile_pic_url", "data_type": "text", "field_metadata": { "description": "External profile picture URL (e.g., from Google OAuth)" } },
     { "display_name": "Designation", "uid": "designation", "data_type": "select", "enum": ["Engineer", "Sr. Engineer", "Tech Lead", "QA", "Manager", "Other"] },
     { "display_name": "Team", "uid": "team", "data_type": "text" },
     { "display_name": "Is Manager", "uid": "is_manager", "data_type": "boolean", "default_value": false },
