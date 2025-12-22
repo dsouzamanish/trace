@@ -47,7 +47,7 @@ module.exports = {
       interpreter: 'none',
       env: {
         NODE_ENV: 'development',
-        VITE_API_URL: 'http://localhost:3001',
+        VITE_API_URL: 'http://localhost:3001/api',
       },
       env_production: {
         NODE_ENV: 'production',

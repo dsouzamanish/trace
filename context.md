@@ -434,7 +434,7 @@ const Contentstack = require('contentstack');
 
 ### Planned 📋
 
-- [ ] Slack integration (`/blocker` command)
+- [x] Slack integration (`/blocker` command) ✅ Completed
 - [ ] Contentstack Automations webhook
 - [ ] AI report scheduling (cron job)
 - [ ] Email notifications
