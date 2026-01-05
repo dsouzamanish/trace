@@ -82,13 +82,13 @@ export default function Layout() {
             href="https://www.contentstack.com" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center gap-2 text-[var(--color-text-secondary)] hover:text-white transition-colors group"
+            className="flex items-center justify-center gap-2 text-[var(--color-text-secondary)] hover:text-white transition-colors group"
           >
             <span className="text-xs opacity-60">Powered by</span>
             <img 
-              src="https://images.contentstack.io/v3/assets/blt7359e2a55efbe031/blt83f97c2c65a5edd2/66b503eb42cb7376f05d0e0b/contentstack-logo.svg"
+              src="https://images.contentstack.io/v3/assets/blt284d669c0cc29fe6/blta1cc38ef8330b5aa/695bf328c510a00de51ac88f/contentstack.jpeg"
               alt="Contentstack"
-              className="h-6 w-auto opacity-70 group-hover:opacity-100 transition-opacity invert"
+              className="h-5 w-auto opacity-70 group-hover:opacity-100 transition-opacity"
             />
           </a>
         </div>
