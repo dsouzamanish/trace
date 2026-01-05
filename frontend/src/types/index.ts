@@ -8,6 +8,7 @@ export interface User {
   designation?: string;
   team?: string;
   isManager: boolean;
+  managedTeams?: string[]; // UIDs of teams managed by this user
 }
 
 export interface AuthState {
@@ -81,6 +82,11 @@ export interface ActionItem {
   title: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
+  severity?: 'High' | 'Medium' | 'Low';
+  category?: string;
+  suggestedSolution?: string;
+  estimatedEffort?: 'quick-win' | 'short-term' | 'long-term';
+  relatedBlockers?: string[];
 }
 
 export interface AiReport {

@@ -34,15 +34,22 @@ trace/
 │   │   │   ├── auth/        # Authentication (Google OAuth, JWT)
 │   │   │   ├── contentstack/ # Contentstack SDK integration
 │   │   │   ├── team-member/ # Team Member CRUD operations
+│   │   │   ├── team/        # Team management (manager determination)
 │   │   │   ├── blocker/     # Blocker CRUD operations
 │   │   │   ├── ai-report/   # AI Report generation
+│   │   │   ├── slack/       # Slack integration (/blocker command)
 │   │   │   └── migration/   # Content type & seed data management
 │   │   └── main.ts          # Application entry point
 │   └── package.json
 ├── frontend/                # React Frontend Application
 │   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/           # Page components
+│   │   ├── components/
+│   │   │   ├── common/      # Layout, LoadingSpinner, StatCard
+│   │   │   ├── blockers/    # BlockerCard, CreateBlockerModal
+│   │   │   ├── dashboard/   # StatsOverview, TrendChart, CategoryBreakdown
+│   │   │   ├── ai-report/   # AiReportCard, AiReportDetail
+│   │   │   └── team/        # TeamMemberCard, MemberDetailModal
+│   │   ├── pages/           # LoginPage, Dashboard, BlockersPage, MyTeamPage
 │   │   ├── store/           # Redux store & slices
 │   │   ├── services/        # API service layer
 │   │   └── App.tsx
@@ -105,6 +112,21 @@ Stores AI-generated insights and recommendations.
 | `insights` | Text (Multiline) | JSON array of insights |
 | `generated_at` | ISO Date | Report generation timestamp |
 
+### 4. Team (`team`)
+
+Organizes team members into teams and **determines manager privileges**.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | Text | Team name (Required, Unique) |
+| `team_id` | Text | Unique team identifier (Required, Unique) |
+| `description` | Text (Multiline) | Team description |
+| `manager` | Reference | **Single** reference to team_member (Required) - **Determines manager status** |
+| `members` | Reference | **Multiple** references to team_member |
+| `status` | Select | Active, Inactive, Archived |
+
+**Note:** The `manager` reference field is the source of truth for manager privileges. If a user is set as the manager in any Team entry, they gain access to the "My Team" feature.
+
 ---
 
 ## 🔐 Authentication Flow
@@ -164,14 +186,49 @@ When a user logs in via Google OAuth for the first time, the system automaticall
 
 ```typescript
 interface JwtPayload {
-  sub: string;      // User UID (Contentstack entry UID)
+  sub: string;          // User UID (Contentstack entry UID)
   email: string;
   firstName: string;
   lastName: string;
-  isManager: boolean;
+  isManager: boolean;   // Derived from Team entries (if user is manager of any team)
   team?: string;
+  managedTeams?: string[];  // UIDs of teams where user is the manager
 }
 ```
+
+### Manager Determination Logic
+
+Manager status is **derived from Team entries**, not from the `is_manager` field on team_member:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              User Login (Google OAuth)                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│         TeamService.findTeamsManagedBy(userUid)             │
+│   - Queries all Team entries in Contentstack                │
+│   - Filters where team.manager.uid === userUid              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+          managedTeams.length > 0    managedTeams.length === 0
+                    │                   │
+                    ▼                   ▼
+            ┌───────────────┐   ┌───────────────────┐
+            │ isManager:    │   │ isManager: false  │
+            │ true          │   │ "My Team" hidden  │
+            │ "My Team"     │   └───────────────────┘
+            │ visible       │
+            └───────────────┘
+```
+
+**To make a user a manager:**
+1. Create a Team entry in Contentstack
+2. Set the user's team_member entry as the `manager` reference
+3. On next login, the user will have `isManager: true`
 
 ---
 
@@ -232,6 +289,33 @@ this.deliveryStack = Contentstack.Stack({
 });
 ```
 
+### 6. Manager Status from Team Content Type
+
+**Decision:** Manager status is derived from Team entries, not the `is_manager` field on team_member
+
+**Rationale:** This creates a clear organizational structure where:
+- Teams are explicitly defined with managers and members
+- Manager privileges are tied to team management responsibility
+- Changes to team structure automatically update access permissions
+- No need to manually toggle `is_manager` field
+
+**Implementation:**
+```typescript
+// In AuthService.generateAuthResponse()
+const managedTeams = await this.teamService.findTeamsManagedBy(teamMember.uid);
+const isManager = managedTeams.length > 0;
+```
+
+### 7. Comprehensive Seed Data
+
+**Decision:** Created 26 blockers distributed across all 8 team members
+
+**Rationale:** Ensures meaningful AI report generation with:
+- Blockers across all severity levels (High, Medium, Low)
+- Multiple categories (Technical, Process, Dependency, Infrastructure, Other)
+- Mix of Open, Resolved, and Ignored statuses
+- Blockers assigned to both managers and individual contributors
+
 ---
 
 ## 🚀 API Endpoints
@@ -271,10 +355,27 @@ this.deliveryStack = Contentstack.Stack({
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/ai-reports` | List AI reports |
+| GET | `/api/ai-reports/my` | Get current user's AI reports |
 | GET | `/api/ai-reports/:id` | Get AI report by ID |
-| POST | `/api/ai-reports/generate/individual` | Generate individual report |
-| POST | `/api/ai-reports/generate/team` | Generate team report |
+| GET | `/api/ai-reports/member/:memberId` | Get AI reports for a team member (Manager) |
+| GET | `/api/ai-reports/team/:teamName` | Get AI reports for a team (Manager) |
+| POST | `/api/ai-reports/generate/my` | Generate report for current user |
+| POST | `/api/ai-reports/generate/member/:memberId` | Generate report for team member (Manager) |
+| POST | `/api/ai-reports/generate/team/:teamName` | Generate team report (Manager) |
+
+### Teams
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/teams` | List all teams |
+| GET | `/api/teams/:uid` | Get team by UID |
+| GET | `/api/teams/by-team-id/:teamId` | Get team by team_id |
+| GET | `/api/teams/member/:memberUid` | Get teams for a member |
+| POST | `/api/teams` | Create a team (Manager only) |
+| PUT | `/api/teams/:uid` | Update a team (Manager only) |
+| POST | `/api/teams/:uid/members/:memberUid` | Add member to team (Manager) |
+| DELETE | `/api/teams/:uid/members/:memberUid` | Remove member from team (Manager) |
+| DELETE | `/api/teams/:uid` | Delete a team (Manager only) |
 
 ### Migration
 
@@ -411,35 +512,38 @@ const Contentstack = require('contentstack');
 - [x] Backend scaffolding (NestJS)
 - [x] Frontend scaffolding (React + Redux)
 - [x] Contentstack SDK integration
-- [x] Content type schemas (Team Member, Blocker, AI Report)
+- [x] Content type schemas (Team Member, Blocker, AI Report, **Team**)
 - [x] Migration module for content type creation
-- [x] Seed data module
+- [x] Seed data module (8 team members, 26 blockers across all severities)
 - [x] Google OAuth authentication
 - [x] JWT token generation and validation
 - [x] Auto-registration on first Google login
 - [x] Team Member CRUD API
+- [x] **Team CRUD API** (for organizing teams and determining managers)
 - [x] Blocker CRUD API
-- [x] AI Report generation service
+- [x] AI Report generation service (enhanced with severity-based action items)
 - [x] PM2 configuration
 - [x] PRD documentation
 - [x] Context documentation (this file)
+- [x] **Slack integration** (`/blocker` command with modal)
+- [x] Frontend Google OAuth integration
+- [x] Personal Dashboard UI
+- [x] Blocker submission form
+- [x] AI insights display
+- [x] **My Team feature** (Manager-only team member management)
+- [x] **Manager status derived from Team entries** (not is_manager field)
 
 ### In Progress 🔄
 
-- [ ] Frontend Google OAuth integration
-- [ ] Personal Dashboard UI
-- [ ] Manager Dashboard UI
-- [ ] Blocker submission form
-- [ ] AI insights display
+- [ ] Contentstack Launch deployment
+- [ ] Railway deployment for backend
 
 ### Planned 📋
 
-- [x] Slack integration (`/blocker` command) ✅ Completed
 - [ ] Contentstack Automations webhook
 - [ ] AI report scheduling (cron job)
 - [ ] Email notifications
 - [ ] Export functionality
-- [ ] Contentstack Launch deployment
 
 ---
 
@@ -453,5 +557,44 @@ const Contentstack = require('contentstack');
 
 ---
 
-*Last Updated: December 12, 2024*
+## 🆕 Recent Features
+
+### My Team Feature (Manager Only)
+
+The "My Team" page is visible only to managers and provides:
+
+1. **Team Overview Cards**
+   - Total team members count
+   - Open blockers count
+   - High severity blockers count
+   - Members needing attention
+
+2. **Team Member Cards**
+   - Profile picture and details
+   - Individual blocker statistics
+   - Click to view detailed member view
+
+3. **Member Detail Modal**
+   - Full list of member's blockers (Open vs Resolved)
+   - AI Insights tab with generated reports
+   - Generate AI Summary button for individual members
+   - Manager can update blocker status
+
+4. **Team AI Report**
+   - Generate comprehensive report for entire team
+   - Severity-grouped analysis
+   - Specific action items with solutions and effort estimates
+
+### Enhanced AI Reports
+
+Action items now include:
+- `severity`: High, Medium, Low
+- `category`: Technical, Process, Dependency, etc.
+- `suggestedSolution`: Step-by-step resolution guidance
+- `estimatedEffort`: quick-win, short-term, long-term
+- `relatedBlockers`: Specific blockers addressed
+
+---
+
+*Last Updated: January 5, 2026*
 

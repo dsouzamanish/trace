@@ -7,7 +7,7 @@ const navItems = [
   { path: '/ai-reports', label: 'AI Insights', icon: '🤖' },
 ];
 
-const managerNavItems = [{ path: '/team', label: 'Team Overview', icon: '👥' }];
+const managerNavItems = [{ path: '/team', label: 'My Team', icon: '👥' }];
 
 export default function Layout() {
   const { user, isManager, logout } = useAuth();

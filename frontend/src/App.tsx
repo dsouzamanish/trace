@@ -4,7 +4,7 @@ import Layout from './components/common/Layout';
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
-import TeamDashboard from './pages/TeamDashboard';
+import MyTeamPage from './pages/MyTeamPage';
 import BlockersPage from './pages/BlockersPage';
 import AiReportsPage from './pages/AiReportsPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -67,7 +67,7 @@ function App() {
           path="team"
           element={
             <ManagerRoute>
-              <TeamDashboard />
+              <MyTeamPage />
             </ManagerRoute>
           }
         />

@@ -78,6 +78,7 @@ export const aiReportsApi = {
     api.post(`/ai-reports/generate/team/${teamName}?period=${period}`),
   getMy: () => api.get('/ai-reports/my'),
   getForTeam: (teamName: string) => api.get(`/ai-reports/team/${teamName}`),
+  getForMember: (memberId: string) => api.get(`/ai-reports/member/${memberId}`),
   getById: (id: string) => api.get(`/ai-reports/${id}`),
 };
 

@@ -35,14 +35,19 @@ Team members can log blockers via Slack using a command. The data flows into Con
 
 **6.1 Content Type: Team Member**
 
-Fields: first\_name, last\_name, email, profile\_pic, designation, team, is\_manager, slack\_id.
+Fields: first\_name, last\_name, email, profile\_pic, profile\_pic\_url, designation, team, is\_manager, slack\_id.
 Each Blocker references a Team Member entry.
 
-**6.2 Content Type: Blocker**
+**6.2 Content Type: Team**
+
+Fields: title (team name), team\_id, description, manager (reference to team\_member), members (multiple reference to team\_member), status.
+The Team content type is used to organize team members and **determine manager status** - if a user is set as the `manager` reference in any Team entry, they are granted manager privileges.
+
+**6.3 Content Type: Blocker**
 
 Fields: team\_member (reference), description, category, severity, timestamp, status, reported\_via, manager\_notes.
 
-**6.3 Content Type: AI Report**
+**6.4 Content Type: AI Report**
 
 Fields: report\_type, target\_member (reference), report\_period, summary, action\_items, generated\_at.
 
@@ -50,7 +55,11 @@ Fields: report\_type, target\_member (reference), report\_period, summary, actio
 
 **7.1 User Authentication & Access**
 
-OAuth-based login via Slack or Google. System maps email/slack\_id to Team Member entry. Access levels: Individual (own data), Manager (team data), Admin (all).
+OAuth-based login via Slack or Google. System maps email/slack\_id to Team Member entry. 
+
+**Manager Status Determination:** A user is considered a manager if they are set as the `manager` reference field in any Team entry. This is checked during login by querying all Team entries and checking if the user's UID matches any team's manager reference.
+
+Access levels: Individual (own data), Manager (team data), Admin (all).
 
 **7.1.1 Auto-Registration via Google OAuth**
 
@@ -99,8 +108,14 @@ Slash command `/blocker` opens a modal. Submissions create Blocker entries in Co
 
 **7.3 Momentum Web App (Launch Frontend)**
 
-*   Personal Dashboard: Displays user’s blockers, trends, and AI summaries.
+*   Personal Dashboard: Displays user's blockers, trends, and AI summaries.
 *   Team Dashboard: Managers see team-level data, comparison charts, and AI insights.
+*   **My Team (Manager Only):** Comprehensive team management view that shows:
+    - All team members as interactive cards with blocker statistics
+    - Click on any member to view their blockers and AI insights
+    - Generate AI summary for individual team members
+    - Generate AI summary for the entire team
+    - Members sorted by urgency (high severity blockers first)
 
 **7.4 AI Insight Generation**
 
@@ -298,4 +313,43 @@ You’ll use Slack + Contentstack Automations + Webhook integration to automatic
   ]
 }
 
+```
+
+---
+
+**🧩 3. Content Type: Team**
+
+| **Property** | **Details** |
+| :---: | :---: |
+| Title | Team |
+| UID | team |
+| Description | Organizes team members into teams with managers. Used to determine manager privileges. |
+| Display Name | {{title}} |
+
+**Schema Design**
+
+| **Field UID** | **Display Name** | **Type** | **Description** | **Validations / Options** |
+| :---: | :---: | :---: | :---: | :---: |
+| title | Team Name | Text | Name of the team | Required: ✅, Unique: ✅ |
+| team\_id | Team ID | Text | Unique identifier (e.g., engineering, qa) | Required: ✅, Unique: ✅ |
+| description | Description | Text | Brief description of the team | Optional, Multiline |
+| manager | Manager | Reference | Single reference to team\_member | Required: ✅ |
+| members | Members | Reference | Multiple references to team\_member | Optional |
+| status | Status | Select | Team status | Options: Active, Inactive, Archived |
+
+**Note:** The `manager` reference field is used to determine manager privileges. If a user is set as the manager of any Team entry, they gain manager access to the "My Team" feature.
+
+```json
+{
+  "title": "Team",
+  "uid": "team",
+  "schema": [
+    { "display_name": "Team Name", "uid": "title", "data_type": "text", "mandatory": true, "unique": true },
+    { "display_name": "Team ID", "uid": "team_id", "data_type": "text", "mandatory": true, "unique": true },
+    { "display_name": "Description", "uid": "description", "data_type": "text", "field_metadata": { "multiline": true } },
+    { "display_name": "Manager", "uid": "manager", "data_type": "reference", "reference_to": ["team_member"], "mandatory": true, "field_metadata": { "ref_multiple": false } },
+    { "display_name": "Members", "uid": "members", "data_type": "reference", "reference_to": ["team_member"], "field_metadata": { "ref_multiple": true } },
+    { "display_name": "Status", "uid": "status", "data_type": "select", "enum": ["Active", "Inactive", "Archived"], "display_type": "dropdown" }
+  ]
+}
 ```
