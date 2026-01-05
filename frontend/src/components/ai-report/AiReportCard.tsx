@@ -19,8 +19,18 @@ export default function AiReportCard({ report, onClick }: AiReportCardProps) {
             <span className="badge bg-primary-500/20 text-primary-400">
               {report.reportPeriod} Report
             </span>
+            {report.isExisting && (
+              <span className="badge bg-yellow-500/20 text-yellow-400 text-xs">
+                Cached
+              </span>
+            )}
           </div>
-          <p className="text-sm text-[var(--color-text-secondary)]">
+          {report.startDate && report.endDate && (
+            <p className="text-sm text-primary-400 font-medium">
+              {format(new Date(report.startDate), 'MMM d')} - {format(new Date(report.endDate), 'MMM d, yyyy')}
+            </p>
+          )}
+          <p className="text-xs text-[var(--color-text-secondary)]">
             Generated {format(new Date(report.generatedAt), 'MMM d, yyyy h:mm a')}
           </p>
         </div>

@@ -99,10 +99,13 @@ export interface AiReport {
   targetMember?: string;
   targetTeam?: string;
   reportPeriod: ReportPeriod;
+  startDate: string;           // Start of the report date range (ISO date)
+  endDate: string;             // End of the report date range (ISO date)
   summary: string;
   actionItems: ActionItem[];
   insights: string[];
   generatedAt: string;
+  isExisting?: boolean;        // True if this report was already generated (not new)
 }
 
 export interface AiReportsState {

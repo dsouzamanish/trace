@@ -22,7 +22,12 @@ export default function AiReportDetail({ report, onClose }: AiReportDetailProps)
               </div>
               <p className="text-sm text-[var(--color-text-secondary)]">
                 {report.reportPeriod.charAt(0).toUpperCase() + report.reportPeriod.slice(1)} Report •
-                Generated {format(new Date(report.generatedAt), 'MMMM d, yyyy')}
+                {report.startDate && report.endDate && (
+                  <span className="text-primary-400">
+                    {' '}{format(new Date(report.startDate), 'MMM d')} - {format(new Date(report.endDate), 'MMM d, yyyy')}
+                  </span>
+                )}
+                {' '}• Generated {format(new Date(report.generatedAt), 'MMM d, yyyy h:mm a')}
               </p>
             </div>
             <button
