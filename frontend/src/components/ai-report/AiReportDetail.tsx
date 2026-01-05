@@ -43,15 +43,22 @@ export default function AiReportDetail({ report, onClose }: AiReportDetailProps)
         {report.actionItems.length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">
-              Action Items
+              Action Items ({report.actionItems.length})
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {report.actionItems.map((item, index) => (
                 <div
                   key={index}
-                  className="bg-white/5 rounded-lg p-4 border-l-2 border-primary-500"
+                  className={`bg-white/5 rounded-lg p-4 border-l-4 ${
+                    item.priority === 'high'
+                      ? 'border-red-500'
+                      : item.priority === 'medium'
+                      ? 'border-yellow-500'
+                      : 'border-green-500'
+                  }`}
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  {/* Header with priority and blocker reference */}
+                  <div className="flex items-center flex-wrap gap-2 mb-3">
                     <span
                       className={`badge ${
                         item.priority === 'high'
@@ -63,11 +70,51 @@ export default function AiReportDetail({ report, onClose }: AiReportDetailProps)
                     >
                       {item.priority}
                     </span>
-                    <span className="font-medium text-white">{item.title}</span>
+                    {item.blockerRef && (
+                      <span className="badge bg-primary-500/20 text-primary-400 text-xs">
+                        {item.blockerRef}
+                      </span>
+                    )}
+                    {item.teamToInvolve && (
+                      <span className="badge bg-blue-500/20 text-blue-400 text-xs">
+                        👥 {item.teamToInvolve}
+                      </span>
+                    )}
+                    {item.estimatedEffort && (
+                      <span className="badge bg-purple-500/20 text-purple-400 text-xs">
+                        ⏱️ {item.estimatedEffort}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-[var(--color-text-secondary)]">
+                  
+                  {/* Title */}
+                  <h4 className="font-medium text-white mb-2">{item.title}</h4>
+                  
+                  {/* Description */}
+                  <p className="text-sm text-[var(--color-text-secondary)] mb-3">
                     {item.description}
                   </p>
+                  
+                  {/* Suggested Solution */}
+                  {item.suggestedSolution && (
+                    <div className="bg-black/20 rounded-lg p-3 mb-3">
+                      <p className="text-xs font-medium text-primary-400 mb-2">📋 Solution Steps:</p>
+                      <p className="text-sm text-gray-300 whitespace-pre-line">
+                        {item.suggestedSolution}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Immediate Next Step */}
+                  {item.immediateNextStep && (
+                    <div className="flex items-start gap-2 bg-green-500/10 rounded-lg p-3">
+                      <span className="text-green-400">▶️</span>
+                      <div>
+                        <p className="text-xs font-medium text-green-400 mb-1">Next Step:</p>
+                        <p className="text-sm text-white">{item.immediateNextStep}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
