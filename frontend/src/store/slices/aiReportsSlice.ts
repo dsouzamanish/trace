@@ -111,7 +111,17 @@ const aiReportsSlice = createSlice({
       .addCase(generateMyReport.fulfilled, (state, action: PayloadAction<AiReport>) => {
         state.isGenerating = false;
         state.currentReport = action.payload;
-        state.reports.unshift(action.payload);
+        
+        // Only add to list if it's a new report (not an existing cached one)
+        // Check by uid to avoid duplicates
+        const existingIndex = state.reports.findIndex(r => r.uid === action.payload.uid);
+        if (existingIndex === -1) {
+          // New report - add to beginning
+          state.reports.unshift(action.payload);
+        } else if (action.payload.isExisting) {
+          // Existing report returned - update it in place (in case data changed)
+          state.reports[existingIndex] = action.payload;
+        }
       })
       .addCase(generateMyReport.rejected, (state, action) => {
         state.isGenerating = false;
@@ -125,7 +135,17 @@ const aiReportsSlice = createSlice({
       .addCase(generateTeamReport.fulfilled, (state, action: PayloadAction<AiReport>) => {
         state.isGenerating = false;
         state.currentReport = action.payload;
-        state.reports.unshift(action.payload);
+        
+        // Only add to list if it's a new report (not an existing cached one)
+        // Check by uid to avoid duplicates
+        const existingIndex = state.reports.findIndex(r => r.uid === action.payload.uid);
+        if (existingIndex === -1) {
+          // New report - add to beginning
+          state.reports.unshift(action.payload);
+        } else if (action.payload.isExisting) {
+          // Existing report returned - update it in place (in case data changed)
+          state.reports[existingIndex] = action.payload;
+        }
       })
       .addCase(generateTeamReport.rejected, (state, action) => {
         state.isGenerating = false;

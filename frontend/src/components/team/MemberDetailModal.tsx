@@ -63,8 +63,21 @@ export default function MemberDetailModal({ member, onClose, onStatusChange }: M
     setIsGenerating(true);
     try {
       const response = await aiReportsApi.generateForMember(member.uid, 'weekly');
-      setReports([response.data, ...reports]);
-      setSelectedReport(response.data);
+      const newReport = response.data;
+      
+      // Only add to list if it's a new report (check by uid to avoid duplicates)
+      const existingIndex = reports.findIndex(r => r.uid === newReport.uid);
+      if (existingIndex === -1) {
+        // New report - add to beginning
+        setReports([newReport, ...reports]);
+      } else if (newReport.isExisting) {
+        // Existing report returned - update it in place
+        const updatedReports = [...reports];
+        updatedReports[existingIndex] = newReport;
+        setReports(updatedReports);
+      }
+      
+      setSelectedReport(newReport);
       setActiveTab('insights');
     } catch (error) {
       console.error('Error generating report:', error);
