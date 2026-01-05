@@ -75,6 +75,23 @@ export default function Layout() {
             Sign Out
           </button>
         </div>
+
+        {/* Footer - Powered by Contentstack */}
+        <div className="p-4 border-t border-white/5">
+          <a 
+            href="https://www.contentstack.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex flex-col items-center justify-center gap-2 text-[var(--color-text-secondary)] hover:text-white transition-colors group"
+          >
+            <span className="text-xs opacity-60">Powered by</span>
+            <img 
+              src="https://images.contentstack.io/v3/assets/blt7359e2a55efbe031/blt83f97c2c65a5edd2/66b503eb42cb7376f05d0e0b/contentstack-logo.svg"
+              alt="Contentstack"
+              className="h-6 w-auto opacity-70 group-hover:opacity-100 transition-opacity invert"
+            />
+          </a>
+        </div>
       </aside>
 
       {/* Main Content */}
